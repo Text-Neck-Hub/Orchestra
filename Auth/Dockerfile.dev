@@ -1,0 +1,16 @@
+
+FROM python:3.13-alpine
+
+
+WORKDIR /app
+
+
+RUN apk update && \
+    apk add --no-cache build-base postgresql-client && \ 
+    rm -rf /var/cache/apk/*
+
+
+RUN pip install uv
+
+
+CMD ["tail", "-f", "/dev/null"]
