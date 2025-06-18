@@ -8,8 +8,8 @@ services:
     image: textneckhub-frontend:v1.0.0
     ports:
       - "90:80"
-    networks:
-      - shared-net
+    environment:
+      - VITE_API_URL=https://api.textneckhub.com
 
   auth:
     build:
@@ -20,8 +20,7 @@ services:
       - postgres
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
-    networks:
-      - shared-net
+      - DJANGO_SETTINGS_MODULE=config.settings.production
 
   board:
     build:
@@ -32,8 +31,7 @@ services:
       - postgres
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
-    networks:
-      - shared-net
+      - DJANGO_SETTINGS_MODULE=config.settings.production
 
   messenger:
     build:
@@ -44,8 +42,7 @@ services:
       - mongodb
     environment:
       - MONGODB_URL=mongodb://mongodb:27027/
-    networks:
-      - shared-net
+      - ENV=production
 
   core:
     build:
@@ -56,8 +53,7 @@ services:
       - redis
     environment:
       - REDIS_URL=redis://redis:6389/0
-    networks:
-      - shared-net
+      - ENV=production
 
   postgres:
     image: postgres:15
@@ -66,8 +62,6 @@ services:
       - POSTGRES_PASSWORD=postgres
     ports:
       - "5442:5432"
-    networks:
-      - shared-net
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -75,8 +69,6 @@ services:
     image: mongo:7
     ports:
       - "27027:27017"
-    networks:
-      - shared-net
     volumes:
       - mongodata:/data/db
 
@@ -84,14 +76,8 @@ services:
     image: redis:7
     ports:
       - "6389:6379"
-    networks:
-      - shared-net
     volumes:
       - redisdata:/data
-
-networks:
-  shared-net:
-    driver: overlay
 
 volumes:
   pgdata:
