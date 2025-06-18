@@ -1,0 +1,9 @@
+FROM node:24-slim
+
+WORKDIR /app
+
+RUN corepack enable && yarn install --frozen-lockfile
+
+RUN yarn global add typescript vite
+
+CMD ["tail", "-f", "/dev/null"]

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  frontend-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./app:/app
+    restart: always
+    networks:
+      - default
+
+networks:
+  default:
+    external: true
+    name: shared-net
