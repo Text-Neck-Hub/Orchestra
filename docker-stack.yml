@@ -4,95 +4,96 @@ services:
   frontend:
     build:
       context: ./Frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.prod
+    image: textneckhub-frontend:v1.0.0
     ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=development
-    volumes:
-      - ./Frontend/app:/app
+      - "90:80"
     networks:
       - shared-net
 
   auth:
     build:
       context: ./Auth
-      dockerfile: Dockerfile.dev
-    ports:
-      - "8001:8000"
+      dockerfile: Dockerfile.prod
+    image: textneckhub-auth:v1.0.0
+    depends_on:
+      - postgres
     environment:
-      - DEBUG=True
-    volumes:
-      - ./Auth/app:/app
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
     networks:
       - shared-net
 
   board:
     build:
       context: ./Board
-      dockerfile: Dockerfile.dev
-    ports:
-      - "8002:8000"
+      dockerfile: Dockerfile.prod
+    image: textneckhub-board:v1.0.0
+    depends_on:
+      - postgres
     environment:
-      - DEBUG=True
-    volumes:
-      - ./Board/app:/app
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
+    networks:
+      - shared-net
+
+  messenger:
+    build:
+      context: ./Messenger
+      dockerfile: Dockerfile.prod
+    image: textneckhub-messenger:v1.0.0
+    depends_on:
+      - mongodb
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27027/
     networks:
       - shared-net
 
   core:
     build:
       context: ./Core
-      dockerfile: Dockerfile.dev
-    ports:
-      - "8003:8000"
+      dockerfile: Dockerfile.prod
+    image: textneckhub-core:v1.0.0
+    depends_on:
+      - redis
     environment:
-      - DEBUG=True
-    volumes:
-      - ./Core/app:/app
+      - REDIS_URL=redis://redis:6389/0
     networks:
       - shared-net
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5442:5432"
+    networks:
+      - shared-net
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27027:27017"
+    networks:
+      - shared-net
+    volumes:
+      - mongodata:/data/db
 
   redis:
     image: redis:7
     ports:
-      - "6379:6379"
+      - "6389:6379"
     networks:
       - shared-net
-
-  nginx:
-    build:
-      context: ./Nginx
-    ports:
-      - "80:80"
-    networks:
-      - shared-net
-
-  # 필요시 Database, Kafka, Messenger 등 추가
-  # database:
-  #   build:
-  #     context: ./Database
-  #   ports:
-  #     - "5432:5432"
-  #   networks:
-  #     - shared-net
-
-  # kafka:
-  #   build:
-  #     context: ./Kafka
-  #   ports:
-  #     - "9092:9092"
-  #   networks:
-  #     - shared-net
-
-  # messenger:
-  #   build:
-  #     context: ./Messenger
-  #   ports:
-  #     - "9000:9000"
-  #   networks:
-  #     - shared-net
+    volumes:
+      - redisdata:/data
 
 networks:
   shared-net:
     driver: overlay
+
+volumes:
+  pgdata:
+  mongodata:
+  redisdata:
