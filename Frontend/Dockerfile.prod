@@ -1,7 +1,7 @@
 # Frontend (React Vite) Production Dockerfile
-FROM node:24-slim AS builder
+FROM node:24-slim
 WORKDIR /app
 
-COPY . .
+COPY app/ /app/
 
 CMD ["tail", "-f", "/dev/null"]
