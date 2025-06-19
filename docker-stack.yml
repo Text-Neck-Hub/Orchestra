@@ -18,7 +18,7 @@ services:
     # ports: # 이제 Nginx가 앞에서 처리할 거니까, 여기서 외부 포트 매핑은 빼는 게 좋아!
     #   - "90:80"
     environment:
-      - VITE_API_URL=https://api.textneckhub.com
+      - VITE_API_URL=https://api.textneckhub.o-r.kr
 
   auth:
     build:

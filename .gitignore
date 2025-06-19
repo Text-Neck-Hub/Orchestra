@@ -1,0 +1,92 @@
+.env
+*.env # .env.local, .env.production 등 모든 .env 파일 무시
+production.env
+
+# =====================================
+# Python 관련 무시 목록
+# 가상 환경, 캐시 파일, 컴파일된 파일 등
+# =====================================
+# 가상 환경 폴더 (자주 사용되는 이름들)
+venv/
+.venv/
+env/
+.env/
+__pycache__/ # 파이썬 캐시 파일
+*.pyc # 컴파일된 파이썬 파일
+*.pyd
+*.so
+
+# pip 관련 파일
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 데이터베이스 파일 (개발용 SQLite 등)
+# 프로덕션에서는 외부 DB를 쓰겠지만, 개발 시 로컬 DB 파일 무시
+db.sqlite3
+
+# 파이썬 빌드/배포 관련
+dist/
+build/
+*.egg-info/
+.tox/
+
+# =====================================
+# Node.js (Frontend) 관련 무시 목록
+# 의존성 폴더, 빌드 결과물 등
+# =====================================
+node_modules/ # npm/yarn/pnpm 등으로 설치된 의존성 패키지
+dist/ # 프론트엔드 빌드 결과물 폴더 (Vite, Webpack 등)
+build/ # 다른 빌드 결과물 폴더 이름일 수도 있음
+.parcel-cache/ # Parcel 캐시
+.vite/ # Vite 캐시
+
+# npm/yarn/pnpm 로그 파일
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# =====================================
+# Docker 관련 무시 목록
+# 볼륨 데이터, 빌드 컨텍스트 임시 파일 등
+# =====================================
+# Docker 볼륨 데이터 (docker-compose.yml에 정의된 볼륨 이름)
+# 이 폴더들은 Docker가 관리하는 데이터라 Git에 포함되면 안 됨
+pgdata/
+mongodata/
+redisdata/
+# 만약 로컬에 볼륨 마운트하는 다른 폴더가 있다면 추가
+
+# Docker 빌드 컨텍스트에서 제외할 파일 (Dockerfile의 .dockerignore와 유사)
+# .dockerignore 파일 자체는 Git에 포함되어야 함
+# .dockerignore
+
+# =====================================
+# IDE 및 에디터 관련 무시 목록
+# 에디터 설정, 임시 파일 등
+# =====================================
+.vscode/ # VS Code 설정 폴더
+.idea/ # IntelliJ/PyCharm 설정 폴더
+*.swp # Vim 스왑 파일
+*.swo
+*~ # 임시 파일
+
+# =====================================
+# 운영체제 관련 무시 목록
+# macOS, Windows 등에서 생성되는 파일
+# =====================================
+.DS_Store # macOS에서 생성되는 폴더 설정 파일
+Thumbs.db # Windows에서 생성되는 썸네일 캐시
+
+# =====================================
+# 로그 파일 및 기타
+# =====================================
+*.log # 모든 로그 파일 무시
+*.tmp # 임시 파일
+
+# =====================================
+# 커버리지 보고서
+# =====================================
+htmlcov/
+.coverage
+
