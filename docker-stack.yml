@@ -7,11 +7,8 @@ services:
       - "80:80" 
       - "443:443" 
     volumes:
- 
       - ./app/nginx-conf:/etc/nginx/conf.d
-
       - ./app/certbot-www:/var/www/certbot
-
       - ./app/certbot-etc:/etc/letsencrypt
     restart: always
     networks:
