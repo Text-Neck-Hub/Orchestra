@@ -1,99 +1,68 @@
 version: '3.8'
-
 services:
   nginx:
     image: nginx:latest
     ports:
-      - "80:80" 
-      - "443:443" 
+      - "80:80"
+      - "443:443"
     volumes:
       - ./app/nginx-conf:/etc/nginx/conf.d
       - ./app/certbot-www:/var/www/certbot
       - ./app/certbot-etc:/etc/letsencrypt
-    restart: always
     networks:
       - default
-
-
   certbot:
     image: certbot/certbot
     volumes:
-      
       - ./app/certbot-www:/var/www/certbot
       - ./app/certbot-etc:/etc/letsencrypt
-    entrypoint: "/bin/sh -c 'trap quit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet --preferred-challenges http --post-hook \"nginx -s reload\"; sleep 12h & wait $$!; done;'" # 12시간마다 자동 갱신!
+    entrypoint: "/bin/sh -c 'trap quit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet --preferred-challenges http --post-hook \"nginx -s reload\"; sleep 12h & wait $$!; done;'"
     networks:
       - default
-
- 
   auth:
-    build:
-      context: ./Auth
-      dockerfile: Dockerfile.prod
     image: textneckhub-auth:v1.0.0
     depends_on:
-      - postgres 
+      - postgres
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_auth_db
       - DJANGO_SETTINGS_MODULE=config.settings.production
     volumes:
-  
-      - ./app/pgdata/auth:/var/lib/postgresql/data 
+      - ./app/pgdata/auth:/var/lib/postgresql/data
     networks:
       - default
-
-
   board:
-    build:
-      context: ./Board
-      dockerfile: Dockerfile.prod
     image: textneckhub-board:v1.0.0
     depends_on:
-      - postgres 
+      - postgres
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_board_db
       - DJANGO_SETTINGS_MODULE=config.settings.production
     volumes:
-  
-      - ./app/pgdata/board:/var/lib/postgresql/data 
+      - ./app/pgdata/board:/var/lib/postgresql/data
     networks:
       - default
-
-
   messenger:
-    build:
-      context: ./Messenger
-      dockerfile: Dockerfile.prod
     image: textneckhub-messenger:v1.0.0
     depends_on:
-      - mongodb 
+      - mongodb
     environment:
       - MONGODB_URL=mongodb://mongodb:27027/
       - ENV=production
     volumes:
-     
       - ./app/mongodata:/data/db
     networks:
       - default
-
-
   core:
-    build:
-      context: ./Core
-      dockerfile: Dockerfile.prod
     image: textneckhub-core:v1.0.0
     depends_on:
-      - redis 
+      - redis
     environment:
       - REDIS_URL=redis://redis:6389/0
       - ENV=production
     volumes:
-      
       - ./app/redisdata:/data
     networks:
       - default
-
- 
   postgres:
     image: postgres:15
     environment:
@@ -102,35 +71,24 @@ services:
     ports:
       - "5442:5432"
     volumes:
-
-      - ./app/pgdata:/var/lib/postgresql/data 
+      - ./app/pgdata:/var/lib/postgresql/data
     networks:
       - default
-
-
   mongodb:
     image: mongo:7
     ports:
       - "27027:27017"
     volumes:
-
-      - ./app/mongodata:/data/db 
+      - ./app/mongodata:/data/db
     networks:
       - default
-
- 
   redis:
     image: redis:7
     ports:
       - "6389:6379"
     volumes:
-
-      - ./app/redisdata:/data 
+      - ./app/redisdata:/data
     networks:
       - default
-
-
 networks:
-  default:
-    external: true
-    name: shared-net
+  default: {} 
