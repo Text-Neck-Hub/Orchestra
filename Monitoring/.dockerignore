@@ -1,0 +1,11 @@
+.git
+.gitignore
+*.pyc
+__pycache__/
+venv/
+*.log
+node_modules/
+Dockerfile
+docker-compose.yml
+prometheus.yml
+grafana_data/

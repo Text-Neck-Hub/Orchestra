@@ -1,34 +1,4 @@
-# version: '3.8'
 
-# services:
-#   nginx:
-#     image: nginx:latest
-#     build:
-#       context: . 
-#       dockerfile: Dockerfile.dev 
-#     ports:
-#       - "80:80" 
-#       - "443:443" 
-#     volumes:
-      
-
-      
-#       - ./app/certbot-www:/var/www/certbot
-#       - ./app/certbot-etc:/etc/letsencrypt
-     
-    
-#     restart: always
-#     networks:
-#       - default
-
-  
-
-
-# networks:
-#   default:
-#     external: true
-#     name: shared-net
-# docker-compose.yml 파일 수정본 (설정 파일 볼륨 추가!)
 version: '3.8'
 
 services:

@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus_server
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      - cadvisor
+      - nodeexporter
+      - app
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana_server
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    container_name: cadvisor_server
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    privileged: true
+    command: --web.listen-address=:8080 --docker_only=true
+
+  nodeexporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter_server
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($|/)"'
+    restart: unless-stopped
+
+  app:
+    build: ./app
+    container_name: sample_app
+    ports:
+      - "5000:5000"
+
+volumes:
+  prometheus_data:
+  grafana_data:
