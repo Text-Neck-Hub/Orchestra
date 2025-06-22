@@ -1,6 +1,8 @@
 version: '3.8'
+
 services:
   nginx:
+    image: nginx:latest
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -8,144 +10,12 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./app/certbot-www:/var/www/certbot:z
-      - ./app/certbot-etc:/etc/letsencrypt:z
+
+      - ./app/certbot-www:/var/www/certbot:z 
+      - ./app/certbot-etc:/etc/letsencrypt:z 
       - ./app/nginx/nginx.conf:/etc/nginx/nginx.conf:z
       - ./app/nginx/conf.d/:/etc/nginx/conf.d/:z
+
     restart: always
     networks:
       - default
-  auth:
-    build:
-      context: ./Auth
-      dockerfile: Dockerfile.prod
-    image: textneckhub-auth:v1.0.0
-    depends_on:
-      - postgres
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_auth_db
-      - DJANGO_SETTINGS_MODULE=config.settings.production
-    volumes:
-      - ./app/pgdata/auth:/var/lib/postgresql/data
-    networks:
-      - default
-  board:
-    build:
-      context: ./Board
-      dockerfile: Dockerfile.prod
-    image: textneckhub-board:v1.0.0
-    depends_on:
-      - postgres
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_board_db
-      - DJANGO_SETTINGS_MODULE=config.settings.production
-    volumes:
-      - ./app/pgdata/board:/var/lib/postgresql/data
-    networks:
-      - default
-  messenger:
-    build:
-      context: ./Messenger
-      dockerfile: Dockerfile.prod
-    image: textneckhub-messenger:v1.0.0
-    depends_on:
-      - mongodb
-    environment:
-      - MONGODB_URL=mongodb://mongodb:27027/
-      - ENV=production
-    volumes:
-      - ./app/mongodata:/data/db
-    networks:
-      - default
-  core:
-    build:
-      context: ./Core
-      dockerfile: Dockerfile.prod
-    image: textneckhub-core:v1.0.0
-    depends_on:
-      - redis
-    environment:
-      - REDIS_URL=redis://redis:6389/0
-      - ENV=production
-    volumes:
-      - ./app/redisdata:/data
-    networks:
-      - default
-  postgres:
-    image: postgres:15
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5442:5432"
-    volumes:
-      - ./app/pgdata:/var/lib/postgresql/data
-    networks:
-      - default
-  mongodb:
-    image: mongo:7
-    ports:
-      - "27027:27017"
-    volumes:
-      - ./app/mongodata:/data/db
-    networks:
-      - default
-  redis:
-    image: redis:7
-    ports:
-      - "6389:6379"
-    volumes:
-      - ./app/redisdata:/data
-    networks:
-      - default
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus_server
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    depends_on:
-      - nodeexporter
-      - messenger
-    networks:
-      - shared-net
-  grafana:
-    image: grafana/grafana
-    container_name: grafana_server
-    ports:
-      - "3001:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - prometheus
-    networks:
-      - shared-net
-
-  nodeexporter:
-    image: quay.io/prometheus/node-exporter:latest
-    container_name: node_exporter_server
-    ports:
-      - "9100:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($|/)"'
-    restart: unless-stopped
-    networks:
-      - shared-net
-volumes:
-  prometheus_data:
-  grafana_data:
-networks:
-  default:
-    external: true
-    name: shared-net
