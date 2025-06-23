@@ -24,6 +24,10 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_auth_db
       - DJANGO_SETTINGS_MODULE=config.settings.production
+      # 🚨🚨🚨 여기부터 추가된 환경 변수야! 🚨🚨🚨
+      - SECRET_KEY=sdasdasasvas123324k23m4l32kmkmfl32lmf3232f23f2 # 👈 이 부분 꼭 바꿔줘야 해!
+      - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.o-r.kr,localhost # 👈 실제 도메인으로 바꿔줘!
+      # 🚨🚨🚨 여기까지 추가된 환경 변수야! 🚨🚨🚨
     volumes:
       - ./Auth/app:/app
  
@@ -38,6 +42,10 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_board_db
       - DJANGO_SETTINGS_MODULE=config.settings.production
+      # 🚨🚨🚨 여기부터 추가된 환경 변수야! 🚨🚨🚨
+      - SECRET_KEY=sdasdasasvas123324k23m4l32kmkmfl32lmf3232f23f2 # 👈 이 부분 꼭 바꿔줘야 해!
+      - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.o-r.kr,localhost # 👈 실제 도메인으로 바꿔줘!
+      # 🚨🚨🚨 여기까지 추가된 환경 변수야! 🚨🚨🚨
     volumes:
       - ./Board/app:/app
 
@@ -136,12 +144,10 @@ services:
     command:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($$|/)"' # 👈 여기 ($$|/) 로 바꿔줘!
+      - '--collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($$|/)"'
     restart: unless-stopped
 
 
 volumes:
   prometheus_data:
   grafana_data:
-
-
