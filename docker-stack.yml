@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   nginx:
     image: nginx:latest
@@ -6,20 +7,13 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./app/nginx-conf:/etc/nginx/conf.d
-      - ./app/certbot-www:/var/www/certbot
-      - ./app/certbot-etc:/etc/letsencrypt
+      - ./Nginx/app/certbot-www:/var/www/certbot:z 
+      - ./Nginx/app/certbot-etc:/etc/letsencrypt:z 
+      - ./Nginx/app/nginx/nginx.conf:/etc/nginx/nginx.conf:z
+      - ./Nginx/app/nginx/conf.d/:/etc/nginx/conf.d/:z
     restart: always
-    networks:
-      - default
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./app/certbot-www:/var/www/certbot
-      - ./app/certbot-etc:/etc/letsencrypt
-    entrypoint: "/bin/sh -c 'trap quit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet --preferred-challenges http --post-hook \"nginx -s reload\"; sleep 12h & wait $$!; done;'"
-    networks:
-      - default
+
+
   auth:
     build:
       context: ./Auth
@@ -31,9 +25,9 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_auth_db
       - DJANGO_SETTINGS_MODULE=config.settings.production
     volumes:
-      - ./app/pgdata/auth:/var/lib/postgresql/data
-    networks:
-      - default
+      - ./Auth/app:/app
+ 
+
   board:
     build:
       context: ./Board
@@ -45,9 +39,9 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_board_db
       - DJANGO_SETTINGS_MODULE=config.settings.production
     volumes:
-      - ./app/pgdata/board:/var/lib/postgresql/data
-    networks:
-      - default
+      - ./Board/app:/app
+
+
   messenger:
     build:
       context: ./Messenger
@@ -59,9 +53,9 @@ services:
       - MONGODB_URL=mongodb://mongodb:27027/
       - ENV=production
     volumes:
-      - ./app/mongodata:/data/db
-    networks:
-      - default
+      - ./Database/app/mongodata:/data/db
+
+
   core:
     build:
       context: ./Core
@@ -73,9 +67,9 @@ services:
       - REDIS_URL=redis://redis:6389/0
       - ENV=production
     volumes:
-      - ./app/redisdata:/data
-    networks:
-      - default
+      - ./Database/app/redisdata:/data
+
+
   postgres:
     image: postgres:15
     environment:
@@ -84,100 +78,25 @@ services:
     ports:
       - "5442:5432"
     volumes:
-      - ./app/pgdata:/var/lib/postgresql/data
-    networks:
-      - default
+      - ./Database/app/pgdata:/var/lib/postgresql/data
+
+
   mongodb:
     image: mongo:7
     ports:
       - "27027:27017"
     volumes:
-      - ./app/mongodata:/data/db
-    networks:
-      - default
+      - ./Database/app/mongodata:/data/db
+
+
   redis:
     image: redis:7
     ports:
       - "6389:6379"
     volumes:
-      - ./app/redisdata:/data
-    networks:
-      - default
+      - ./Database/app/redisdata:/data
 
-  # --- Kong Gateway Services ---
-  kong-database:
-    image: postgres:13
-    container_name: kong-postgres
-    environment:
-      POSTGRES_USER: kong
-      POSTGRES_DB: kong
-      POSTGRES_PASSWORD: kong_password
-    volumes:
-      - kong_data:/var/lib/postgresql/data
-    networks:
-      - shared-net
 
-  kong-migrations:
-    image: kong:3.6.0
-    container_name: kong-migrations
-    environment:
-      KONG_DATABASE: postgres
-      KONG_PG_HOST: kong-database
-      KONG_PG_USER: kong
-      KONG_PG_PASSWORD: kong_password
-    command: kong migrations bootstrap
-    depends_on:
-      - kong-database
-    networks:
-      - shared-net
-
-  kong:
-    image: kong:3.6.0
-    container_name: kong-gateway
-    environment:
-      KONG_DATABASE: postgres
-      KONG_PG_HOST: kong-database
-      KONG_PG_USER: kong
-      KONG_PG_PASSWORD: kong_password
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
-      KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
-    ports:
-      - "8000:8000" # Kong Proxy HTTP (클라이언트 요청을 받는 포트)
-      - "8443:8443" # Kong Proxy HTTPS
-      - "8001:8001" # Kong Admin API HTTP (설정/관리를 위한 API 포트)
-      - "8444:8444" # Kong Admin API HTTPS
-    depends_on:
-      - kong-migrations
-    restart: on-failure
-    networks:
-      - shared-net
-
-  kong-manager: # Kong의 웹 기반 대시보드 (선택 사항이지만 편리해!)
-    image: kong/kong-manager:3.6.0
-    container_name: kong-manager
-    environment:
-      KONGA_DB_ADAPTER: postgres
-      KONGA_DB_HOST: kong-database
-      KONGA_DB_USER: kong
-      KONGA_DB_PASSWORD: kong_password
-      KONGA_DB_DATABASE: kong
-      KONGA_HOOK_TIMEOUT: 120000
-      KONGA_LOG_LEVEL: info
-      KONGA_ADMIN_API_URL: http://kong:8001 # Kong Admin API 주소
-    ports:
-      - "8002:1337" # Kong Manager 웹 인터페이스 포트
-    depends_on:
-      - kong
-    restart: on-failure
-    networks:
-      - shared-net
-  # --- End Kong Gateway Services ---
-
-  # --- 모니터링 서비스 ---
   prometheus:
     image: prom/prometheus
     container_name: prometheus_server
@@ -192,8 +111,8 @@ services:
     depends_on:
       - nodeexporter
       - messenger
-    networks:
-      - shared-net
+
+
   grafana:
     image: grafana/grafana
     container_name: grafana_server
@@ -203,8 +122,8 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
-    networks:
-      - shared-net
+
+
   nodeexporter:
     image: quay.io/prometheus/node-exporter:latest
     container_name: node_exporter_server
@@ -217,17 +136,12 @@ services:
     command:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($|/)"'
+      - '--collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($$|/)"' # 👈 여기 ($$|/) 로 바꿔줘!
     restart: unless-stopped
-    networks:
-      - shared-net
-  # --- End 모니터링 서비스 ---
+
 
 volumes:
   prometheus_data:
   grafana_data:
-  kong_data: # Kong 데이터베이스를 위한 볼륨 추가
-networks:
-  default:
-    external: true
-    name: shared-net
+
+
