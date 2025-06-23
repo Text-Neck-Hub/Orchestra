@@ -11,6 +11,7 @@ services:
       - ./Nginx/app/certbot-etc:/etc/letsencrypt:z 
       - ./Nginx/app/nginx/nginx.conf:/etc/nginx/nginx.conf:z
       - ./Nginx/app/nginx/conf.d/:/etc/nginx/conf.d/:z
+      - ./Frontend/app/dist:/usr/share/nginx/html:ro 
     restart: always
 
 
