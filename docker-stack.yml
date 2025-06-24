@@ -32,7 +32,6 @@ services:
       
     volumes:
       - ./Auth/app:/app
-  
 
   board:
     build:
