@@ -28,7 +28,7 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings.production
       
       - SECRET_KEY=sdasdasasvas123324k23m4l32kmkmfl32lmf3232f23f2
-      - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.o-r.kr,localhost 
+      - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost 
       
     volumes:
       - ./Auth/app:/app
