@@ -1,2 +1,1 @@
-CREATE DATABASE textneckhub_auth_db;
 CREATE DATABASE textneckhub_board_db;

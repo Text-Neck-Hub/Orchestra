@@ -9,7 +9,8 @@ production.env
 # 가상 환경 폴더 (자주 사용되는 이름들)
 Nginx/app/certbot-etc/
 Nginx/app/certbot-www/
-
+Database/app/pgdata-auth/
+Database/app/pgdata-board/
 venv/
 .venv/
 env/

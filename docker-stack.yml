@@ -7,14 +7,24 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Nginx/app/certbot-www:/var/www/certbot:z 
-      - ./Nginx/app/certbot-etc:/etc/letsencrypt:z 
+      - ./Nginx/app/certbot-www:/var/www/certbot:z
+      - ./Nginx/app/certbot-etc:/etc/letsencrypt:z
       - ./Nginx/app/nginx/nginx.conf:/etc/nginx/nginx.conf:z
       - ./Nginx/app/nginx/conf.d/:/etc/nginx/conf.d/:z
       - ./Frontend/app/dist:/usr/share/nginx/html:ro
       - ./Auth/app:/app
-    restart: always
-
+      # 🗑️ 이 볼륨은 Nginx가 Auth 앱의 정적/미디어 파일을 서빙하는 용도가 아니라면 불필요 (아래 주석 참고)
+      # 🌟 Nginx가 Auth 앱의 정적 파일/미디어 파일을 서빙한다면 아래 볼륨도 필요
+      # 🌟 - ./Auth/app/static:/app/static:ro # Django collectstatic 경로
+      # 🌟 - ./Auth/app/media:/app/media:ro # Django media 파일 경로
+    restart: always # 💖 이 줄은 volumes와 같은 레벨 (스페이스 4칸)
+    deploy: # 💖 이 줄도 volumes와 같은 레벨 (스페이스 4칸)
+      replicas: 1 # 💖 deploy보다 2칸 더 (스페이스 6칸)
+      placement: # 💖 deploy보다 2칸 더 (스페이스 6칸)
+        constraints: # 💖 placement보다 2칸 더 (스페이스 8칸)
+          - node.role == manager # 💖 constraints보다 2칸 더 (스페이스 10칸)
+      restart_policy: # 💖 deploy보다 2칸 더 (스페이스 6칸)
+        condition: on-failure # 💖 restart_policy보다 2칸 더 (스페이스 8칸)
 
   auth:
     build:
@@ -22,36 +32,44 @@ services:
       dockerfile: Dockerfile.prod
     image: textneckhub-auth:v1.0.0
     depends_on:
-      - postgres
+      - postgres-auth
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_auth_db
+      - DATABASE_URL=postgresql://auth_user:auth_password@postgres-auth:5432/textneckhub_auth_db
       - DJANGO_SETTINGS_MODULE=config.settings.production
-      
       - SECRET_KEY=sdasdasasvas123324k23m4l32kmkmfl32lmf3232f23f2
-      - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost 
-      
+      - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost
     volumes:
       - ./Auth/app:/app
+    deploy:
+      replicas: 1 # 💖 replicas를 1로 수정
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
 
-  # board:
-  #   build:
-  #     context: ./Board
-  #     dockerfile: Dockerfile.prod
-  #   image: textneckhub-board:v1.0.0
-  #   depends_on:
-  #     - postgres
-  #   environment:
-  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/textneckhub_board_db
-  #     - DJANGO_SETTINGS_MODULE=config.settings.production
-      
-  #     - SECRET_KEY=sdasdasasvas123324k23m4l32kmkmfl32lmf3232f23f2
-  #     - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.o-r.kr,localhost
-      
-  #   volumes:
-  #     - ./Board/app:/app
-
-
-  # messenger:
+  board:
+    build:
+      context: ./Board
+      dockerfile: Dockerfile.prod
+    image: textneckhub-board:v1.0.0
+    depends_on:
+      - postgres-board
+    environment:
+      - DATABASE_URL=postgresql://board_user:board_password@postgres-board:5432/textneckhub_board_db
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - SECRET_KEY=sdasdasasvas123324k23m4l32kmkmfl32lmf3232f23f2
+      - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.o-r.kr,localhost
+    volumes:
+      - ./Board/app:/app
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  # messenger: # 💖 주석 처리된 서비스 사용 시 설정 필요
   #   build:
   #     context: ./Messenger
   #     dockerfile: Dockerfile.prod
@@ -59,13 +77,17 @@ services:
   #   depends_on:
   #     - mongodb
   #   environment:
-  #     - MONGODB_URL=mongodb://mongodb:27027/
+  #     - MONGODB_URL=mongodb://mongodb:27017/ # 💖 MongoDB 기본 포트 27017로 변경 (원래 27027이었음)
   #     - ENV=production
   #   volumes:
-  #     - ./Database/app/mongodata:/data/db
+  #     - ./Database/app/mongodata:/data/db # 🗑️ ./Database/app/mongodata 대신 Named Volume으로 변경 권장
+  #   🌟 deploy: # Docker Swarm 배포 설정 추가
+  #   🌟   replicas: 1 # 예시
+  #   🌟   restart_policy:
+  #   🌟     condition: on-failure
 
 
-  # core:
+  # core: # 💖 주석 처리된 서비스 사용 시 설정 필요
   #   build:
   #     context: ./Core
   #     dockerfile: Dockerfile.prod
@@ -73,80 +95,143 @@ services:
   #   depends_on:
   #     - redis
   #   environment:
-  #     - REDIS_URL=redis://redis:6389/0
+  #     - REDIS_URL=redis://redis:6379/0 # 💖 Redis 기본 포트 6379로 변경 (원래 6389이었음)
   #     - ENV=production
   #   volumes:
-  #     - ./Database/app/redisdata:/data
+  #     - ./Database/app/redisdata:/data # 🗑️ ./Database/app/redisdata 대신 Named Volume으로 변경 권장
+  #   🌟 deploy: # Docker Swarm 배포 설정 추가
+  #   🌟   replicas: 1 # 예시
+  #   🌟   restart_policy:
+  #   🌟     condition: on-failure
 
 
-  postgres:
+  postgres-auth:
     image: postgres:15
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5442:5432"
+      - POSTGRES_USER=auth_user # 💖 Auth 서비스 전용 사용자 이름으로 변경
+      - POSTGRES_PASSWORD=auth_password # 💖 Auth 서비스 전용 비밀번호로 변경
+      - POSTGRES_DB=textneckhub_auth_db # 🌟 Auth 서비스 전용 DB 이름 추가
+    # ports: # 🗑️ 이 섹션을 완전히 제거! 외부로 노출하지 않음
+      # 🗑️ - "5442:5432"
     volumes:
-      - ./Database/app/pgdata:/var/lib/postgresql/data
-      - ./Database/init-db:/docker-entrypoint-initdb.d
+      - postgres_auth_data:/var/lib/postgresql/data # 💖 Named Volume으로 변경
+      - ./Database/init-db:/docker-entrypoint-initdb.d # 💖 init 스크립트 경로를 각 DB에 맞게 구체화
+    deploy: # 💖 이 줄은 volumes와 같은 레벨 (스페이스 4칸)
+      replicas: 1 # 💖 deploy보다 2칸 더 (스페이스 6칸)
+      placement: # 💖 deploy보다 2칸 더 (스페이스 6칸)
+        constraints: # 💖 placement보다 2칸 더 (스페이스 8칸)
+          - node.labels.db_auth == true # 💖 constraints보다 2칸 더 (스페이스 10칸)
+      restart_policy: # 💖 deploy보다 2칸 더 (스페이스 6칸)
+        condition: on-failure # 💖 restart_policy보다 2칸 더 (스페이스 8칸)
+        
+  postgres-board:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=board_user # 💖 Board 서비스 전용 사용자 이름으로 변경
+      - POSTGRES_PASSWORD=board_password # 💖 Board 서비스 전용 비밀번호로 변경
+      - POSTGRES_DB=textneckhub_board_db # 🌟 Board 서비스 전용 DB 이름 추가
+    # ports: # 🗑️ 이 섹션을 완전히 제거! 외부로 노출하지 않음
+      # 🗑️ - "5442:5432"
+    volumes:
+      - postgres_board_data:/var/lib/postgresql/data # 💖 Named Volume으로 변경
+      - ./Database/init-db:/docker-entrypoint-initdb.d # 💖 init 스크립트 경로를 각 DB에 맞게 구체화
+    deploy: # 💖 이 줄은 volumes와 같은 레벨 (스페이스 6칸)
+      replicas: 1 # 💖 deploy보다 2칸 더 (스페이스 8칸)
+      placement: # 💖 deploy보다 2칸 더 (스페이스 8칸)
+        constraints: # 💖 placement보다 2칸 더 (스페이스 10칸)
+          - node.labels.db_board == true # 💖 constraints보다 2칸 더 (스페이스 12칸)
+      restart_policy: # 💖 deploy보다 2칸 더 (스페이스 8칸)
+        condition: on-failure # 💖 restart_policy보다 2칸 더 (스페이스 10칸)
 
-  # mongodb:
+  # mongodb: # 💖 주석 처리된 서비스 사용 시 설정 필요
   #   image: mongo:7
-  #   ports:
-  #     - "27027:27017"
+  #   ports: # 🗑️ 외부 노출 필요 없으면 이 섹션 제거
+  #     # 🗑️ - "27027:27017"
   #   volumes:
-  #     - ./Database/app/mongodata:/data/db
+  #     - mongodb_data:/data/db # 💖 Named Volume 사용 (권장)
+  #   🌟 deploy: # Docker Swarm 배포 설정 추가
+  #   🌟   replicas: 1 # 예시
+  #   🌟   restart_policy:
+  #   🌟     condition: on-failure
 
 
   redis:
     image: redis:7
     volumes:
-      - ./Database/app/redisdata:/data
+      - redis_data:/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
 
-#   prometheus:
-#     image: prom/prometheus
-#     container_name: prometheus_server
-#     ports:
-#       - "9090:9090"
-#     volumes:
-#       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-#       - prometheus_data:/prometheus
-#     command:
-#       - '--config.file=/etc/prometheus/prometheus.yml'
-#       - '--storage.tsdb.path=/prometheus'
-#     depends_on:
-#       - nodeexporter
-#       - messenger
+  # prometheus: # 💖 주석 처리된 서비스 사용 시 설정 필요
+  #   image: prom/prometheus
+  #   container_name: prometheus_server # 🗑️ Swarm에서는 container_name보다 service name이 중요
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #     - prometheus_data:/prometheus # 💖 Named Volume 사용
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #   depends_on:
+  #     - nodeexporter
+  #     # - messenger # messenger가 Prometheus 타겟이라면 (ex: /metrics 엔드포인트) 여기에 추가
+  #   🌟 deploy: # Docker Swarm 배포 설정 추가
+  #   🌟   replicas: 1
+  #   🌟   restart_policy:
+  #   🌟     condition: on-failure
 
 
-#   grafana:
-#     image: grafana/grafana
-#     container_name: grafana_server
-#     ports:
-#       - "3001:3000"
-#     volumes:
-#       - grafana_data:/var/lib/grafana
-#     depends_on:
-#       - prometheus
+  # grafana: # 💖 주석 처리된 서비스 사용 시 설정 필요
+  #   image: grafana/grafana
+  #   container_name: grafana_server # 🗑️ Swarm에서는 container_name보다 service name이 중요
+  #   ports:
+  #     - "3001:3000"
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana # 💖 Named Volume 사용
+  #   depends_on:
+  #     - prometheus
+  #   🌟 deploy: # Docker Swarm 배포 설정 추가
+  #   🌟   replicas: 1
+  #   🌟   restart_policy:
+  #   🌟     condition: on-failure
 
 
-#   nodeexporter:
-#     image: quay.io/prometheus/node-exporter:latest
-#     container_name: node_exporter_server
-#     ports:
-#       - "9100:9100"
-#     volumes:
-#       - /proc:/host/proc:ro
-#       - /sys:/host/sys:ro
-#       - /:/rootfs:ro
-#     command:
-#       - '--path.procfs=/host/proc'
-#       - '--path.sysfs=/host/sys'
-#       - '--collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($$|/)"'
-#     restart: unless-stopped
+  # nodeexporter: # 💖 주석 처리된 서비스 사용 시 설정 필요
+  #   image: quay.io/prometheus/node-exporter:latest
+  #   container_name: node_exporter_server # 🗑️ Swarm에서는 container_name보다 service name이 중요
+  #   ports:
+  #     - "9100:9100"
+  #   volumes:
+  #     - /proc:/host/proc:ro
+  #     - /sys:/host/sys:ro
+  #     - /:/rootfs:ro
+  #   command:
+  #     - '--path.procfs=/host/proc'
+  #     - '--path.sysfs=/host/sys'
+  #     - '--collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($$|/)"'
+  #   restart: unless-stopped # 🗑️ deploy 섹션의 restart_policy로 대체 권장
+  #   🌟 deploy: # Docker Swarm 배포 설정 추가
+  #   🌟   mode: global # 모든 노드에 배포 (Node Exporter에 적합)
+  #   🌟   restart_policy:
+  #   🌟     condition: on-failure
 
 
-# volumes:
-#   prometheus_data:
-#   grafana_data:
+# --- Named Volumes 정의 (데이터 영속성 보장) ---
+volumes: # 🌟 volumes 섹션 추가
+  postgres_auth_data: # 🌟 postgres_auth_data 볼륨 정의
+  postgres_board_data: # 🌟 postgres_board_data 볼륨 정의
+  # 🌟 주석 처리된 서비스들을 사용한다면 아래 볼륨들도 주석 해제하여 정의
+  # 🌟 mongodb_data:
+  redis_data:
+  # 🌟 prometheus_data:
+  # 🌟 grafana_data:
+
+# --- Networks 정의 (선택 사항이지만 명시적으로 관리하면 좋음) ---
+# 🌟 networks: # networks 섹션 추가 (모든 서비스는 기본적으로 'default' 오버레이 네트워크에 연결됨)
+# 🌟   default:
+# 🌟     driver: overlay
+# 🌟     attachable: true # 외부에서 이 네트워크에 연결 가능하게 함 (예: Nginx에서)
