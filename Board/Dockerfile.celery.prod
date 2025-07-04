@@ -1,0 +1,7 @@
+# Board 서비스 Production Dockerfile
+FROM python:3.13-alpine
+WORKDIR /app
+COPY app/ /app/
+
+
+CMD ["tail", "-f", "/dev/null"]
