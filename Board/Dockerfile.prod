@@ -4,4 +4,4 @@ WORKDIR /app
 COPY app/ /app/
 
 
-CMD ["tail", "-f", "/dev/null"]
+CMD [".venv/bin/uv","run","uwsgi", "--ini", "uwsgi.ini"]
