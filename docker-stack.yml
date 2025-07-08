@@ -104,13 +104,14 @@ services:
     image: textneckhub-auth:v1.0.0
     depends_on:
       - postgres-auth
+
     environment:
       - DATABASE_URL=postgresql://auth_user:auth_password@postgres-auth:5432/textneckhub_auth_db
       - DJANGO_SETTINGS_MODULE=config.settings.production
       - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost
       
-      # 🚨🚨🚨 JWT 관련 환경 변수 추가! (모든 서비스에 동일하게 주입) 🚨🚨🚨
-      - SECRET_KEY=${DJANGO_SECRET_KEY} # JWT 서명 키 (필수)
+      
+      - SECRET_KEY=${SECRET_KEY}
       - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
       - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
       - JWT_ROTATE_REFRESH_TOKENS=${JWT_ROTATE_REFRESH_TOKENS}
