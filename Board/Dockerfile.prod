@@ -2,4 +2,12 @@ FROM python:3.13-alpine
 WORKDIR /app
 COPY app/ /app/
 RUN .venv/bin/uv run python manage.py collectstatic --noinput
-CMD [".venv/bin/uv","run","daphne", "-b", "0.0.0.0:8000", "config.asgi:application"]
+CMD [".venv/bin/uv","run","gunicorn", \
+    "-w", "4", \
+    "-k", "daphne.worker.DaphneWorker", \
+    "-b", "0.0.0.0:8000", \
+    "config.asgi:application", \
+    "--access-log", "-", \
+    "--error-log", "-", \
+    "--ping-interval", "20", \
+    "--root-path", "/board"]
