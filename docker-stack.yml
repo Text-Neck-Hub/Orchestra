@@ -1,75 +1,4 @@
-# version: '3.8'
 
-# services:
-#   nginx:
-#     image: nginx:latest
-#     ports:
-#       - "80:80"
-#       - "443:443"
-#     volumes:
-#       - ./Nginx/app/certbot-www:/var/www/certbot:z
-#       - ./Nginx/app/certbot-etc:/etc/letsencrypt:z
-#       - ./Nginx/app/nginx/nginx.conf:/etc/nginx/nginx.conf:z
-#       - ./Nginx/app/nginx/conf.d/:/etc/nginx/conf.d/:z
-#       - ./Frontend/app/dist:/usr/share/nginx/html:ro
-#       - ./Auth/app:/app
-#       # 🗑️ 이 볼륨은 Nginx가 Auth 앱의 정적/미디어 파일을 서빙하는 용도가 아니라면 불필요 (아래 주석 참고)
-#       # 🌟 Nginx가 Auth 앱의 정적 파일/미디어 파일을 서빙한다면 아래 볼륨도 필요
-#       # 🌟 - ./Auth/app/static:/app/static:ro # Django collectstatic 경로
-#       # 🌟 - ./Auth/app/media:/app/media:ro # Django media 파일 경로
-#     restart: always # 💖 이 줄은 volumes와 같은 레벨 (스페이스 4칸)
-#     deploy: # 💖 이 줄도 volumes와 같은 레벨 (스페이스 4칸)
-#       replicas: 1 # 💖 deploy보다 2칸 더 (스페이스 6칸)
-#       placement: # 💖 deploy보다 2칸 더 (스페이스 6칸)
-#         constraints: # 💖 placement보다 2칸 더 (스페이스 8칸)
-#           - node.role == manager # 💖 constraints보다 2칸 더 (스페이스 10칸)
-#       restart_policy: # 💖 deploy보다 2칸 더 (스페이스 6칸)
-#         condition: on-failure # 💖 restart_policy보다 2칸 더 (스페이스 8칸)
-
-#   auth:
-#     build:
-#       context: ./Auth
-#       dockerfile: Dockerfile.prod
-#     image: textneckhub-auth:v1.0.0
-#     depends_on:
-#       - postgres-auth
-#     environment:
-#       - DATABASE_URL=postgresql://auth_user:auth_password@postgres-auth:5432/textneckhub_auth_db
-#       - DJANGO_SETTINGS_MODULE=config.settings.production
-#       - SECRET_KEY=sdasdasasvas123324k23m4l32kmkmfl32lmf3232f23f2
-#       - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost
-#     volumes:
-#       - ./Auth/app:/app
-#     deploy:
-#       replicas: 1 # 💖 replicas를 1로 수정
-#       update_config:
-#         parallelism: 1
-#         delay: 10s
-#       restart_policy:
-#         condition: on-failure
-
-
-#   board:
-#     build:
-#       context: ./Board
-#       dockerfile: Dockerfile.prod
-#     image: textneckhub-board:v1.0.0
-#     depends_on:
-#       - postgres-board
-#     environment:
-#       - DATABASE_URL=postgresql://board_user:board_password@postgres-board:5432/textneckhub_board_db
-#       - DJANGO_SETTINGS_MODULE=config.settings.production
-#       - SECRET_KEY=sdasdasasvas123324k23m4l32kmkmfl32lmf3232f23f2
-#       - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.o-r.kr,localhost
-#     volumes:
-#       - ./Board/app:/app
-#     deploy:
-#       replicas: 1
-#       update_config:
-#         parallelism: 1
-#         delay: 10s
-#       restart_policy:
-#         condition: on-failure
 version: '3.8'
 
 services:
@@ -104,14 +33,13 @@ services:
     image: textneckhub-auth:v1.0.0
     depends_on:
       - postgres-auth
-
     environment:
-      - DATABASE_URL=postgresql://auth_user:auth_password@postgres-auth:5432/textneckhub_auth_db
-      - DJANGO_SETTINGS_MODULE=config.settings.production
-      - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost
+      # 🚨🚨🚨 모든 값들을 환경 변수에서 불러오도록 수정! 🚨🚨🚨
+      - DATABASE_URL=${AUTH_DATABASE_URL}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
       
-      
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY} # SECRET_KEY는 DJANGO_SECRET_KEY로 통일
       - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
       - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
       - JWT_ROTATE_REFRESH_TOKENS=${JWT_ROTATE_REFRESH_TOKENS}
@@ -123,12 +51,12 @@ services:
       - JWT_ISSUER=${JWT_ISSUER}
       - JWT_SLIDING_TOKEN_LIFETIME_MINUTES=${JWT_SLIDING_TOKEN_LIFETIME_MINUTES}
       - JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS=${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS}
+
+      - REDIS_HOST=${REDIS_HOST}
     volumes:
-      - ./Auth/app:/app # 코드 마운트
-      # 🚨🚨🚨 정적/미디어 파일 공유 볼륨 추가! 🚨🚨🚨
-      # Auth 서비스의 STATIC_ROOT와 MEDIA_ROOT 경로에 맞게 마운트
-      - static_data:/app/collected_static_auth/:rw # Auth 서비스의 collectstatic 결과가 여기로
-      - media_data:/app/uploaded_media_auth/:rw   # Auth 서비스의 미디어 파일 업로드가 여기로
+      - ./Auth/app:/app 
+      - static_data:/app/collected_static_auth/:rw
+      - media_data:/app/uploaded_media_auth/:rw
     deploy:
       replicas: 1
       update_config:
@@ -137,50 +65,95 @@ services:
       restart_policy:
         condition: on-failure
 
-#   board:
-#     build:
-#       context: ./Board
-#       dockerfile: Dockerfile.prod
-#     image: textneckhub-board:v1.0.0
-#     depends_on:
-#       - postgres-board
-#     environment:
-#       - DATABASE_URL=postgresql://board_user:board_password@postgres-board:5432/textneckhub_board_db
-#       - DJANGO_SETTINGS_MODULE=config.settings.production
-#       - ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost # 오타 수정: o-r.kr -> p-e.kr
-      
-#       # 🚨🚨🚨 JWT 관련 환경 변수 추가! (인증 서비스와 동일하게 주입) 🚨🚨🚨
-#       - SECRET_KEY=${DJANGO_SECRET_KEY} # JWT 서명 키 (필수)
-#       - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
-#       - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
-#       - JWT_ROTATE_REFRESH_TOKENS=${JWT_ROTATE_REFRESH_TOKENS}
-#       - JWT_BLACKLIST_AFTER_ROTATION=${JWT_BLACKLIST_AFTER_ROTATION}
-#       - JWT_ALGORITHM=${JWT_ALGORITHM}
-#       - JWT_USER_ID_CLAIM=${JWT_USER_ID_CLAIM}
-#       - JWT_JTI_CLAIM=${JWT_JTI_CLAIM}
-#       - JWT_AUDIENCE=${JWT_AUDIENCE}
-#       - JWT_ISSUER=${JWT_ISSUER}
-#       - JWT_SLIDING_TOKEN_LIFETIME_MINUTES=${JWT_SLIDING_TOKEN_LIFETIME_MINUTES}
-#       - JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS=${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS}
-#     volumes:
-#       - ./Board/app:/app # 코드 마운트
-#       # 🚨🚨🚨 정적/미디어 파일 공유 볼륨 추가! 🚨🚨🚨
-#       # Board 서비스의 STATIC_ROOT와 MEDIA_ROOT 경로에 맞게 마운트
-#       - static_data:/app/collected_static_board/:rw # Board 서비스의 collectstatic 결과가 여기로
-#       - media_data:/app/uploaded_media_board/:rw   # Board 서비스의 미디어 파일 업로드가 여기로
-#     deploy:
-#       replicas: 1
-#       update_config:
-#         parallelism: 1
-#         delay: 10s
-#       restart_policy:
-#         condition: on-failure
+  board:
+    build:
+      context: ./Board
+      dockerfile: Dockerfile.prod
+    image: textneckhub-board:v1.0.0
+    depends_on:
+      - postgres-board
+    environment:
 
-# # 🚨🚨🚨 볼륨 정의 추가! 🚨🚨🚨
-# volumes:
-#   static_data: # 모든 Django 서비스의 정적 파일을 모을 공유 볼륨
-#   media_data:  # 모든 Django 서비스의 미디어 파일을 모을 공유 볼륨
-  
+      - DATABASE_URL=${BOARD_DATABASE_URL}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      
+      - SECRET_KEY=${SECRET_KEY} 
+      - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
+      - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
+      - JWT_ROTATE_REFRESH_TOKENS=${JWT_ROTATE_REFRESH_TOKENS}
+      - JWT_BLACKLIST_AFTER_ROTATION=${JWT_BLACKLIST_AFTER_ROTATION}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_USER_ID_CLAIM=${JWT_USER_ID_CLAIM}
+      - JWT_JTI_CLAIM=${JWT_JTI_CLAIM}
+      - JWT_AUDIENCE=${JWT_AUDIENCE}
+      - JWT_ISSUER=${JWT_ISSUER}
+      - JWT_SLIDING_TOKEN_LIFETIME_MINUTES=${JWT_SLIDING_TOKEN_LIFETIME_MINUTES}
+      - JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS=${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS}
+
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - REDIS_HOST=${REDIS_HOST}
+    volumes:
+      - ./Board/app:/app 
+      - static_data:/app/collected_static_board/:rw
+      - media_data:/app/uploaded_media_board/:rw 
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  postgres-auth:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=${AUTH_DB_USER}
+      - POSTGRES_PASSWORD=${AUTH_DB_PASSWORD}
+      - POSTGRES_DB=${AUTH_DB_NAME}
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+      - ./Database/auth-init-db:/docker-entrypoint-initdb.d
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.db_auth == true
+      restart_policy:
+        condition: on-failure
+
+  postgres-board:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=${BOARD_DB_USER}
+      - POSTGRES_PASSWORD=${BOARD_DB_PASSWORD}
+      - POSTGRES_DB=${BOARD_DB_NAME}
+    volumes:
+      - postgres_board_data:/var/lib/postgresql/data
+      - ./Database/board-init-db:/docker-entrypoint-initdb.d
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.db_board == true
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: redis:7
+    volumes:
+      - redis_data:/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+volumes:
+  postgres_auth_data:
+  postgres_board_data:
+  static_data: 
+  media_data:
+  redis_data:
+
 #   rabbitmq:
 #     image: rabbitmq:3-management-alpine
 #     ports:
@@ -243,22 +216,6 @@ services:
   #       condition: on-failure
 
   # 🐶 기존 postgres-board 서비스
-  # postgres-board:
-  #   image: postgres:13-alpine # 예시
-  #   environment:
-  #     POSTGRES_USER: board_user
-  #     POSTGRES_PASSWORD: board_password
-  #     POSTGRES_DB: textneckhub_board_db
-  #   volumes:
-  #     - pgdata-board:/var/lib/postgresql/data # 데이터 유지를 위해 볼륨 사용
-  #   deploy:
-  #     replicas: 1
-  #     update_config:
-  #       parallelism: 1
-  #       delay: 10s
-  #     restart_policy:
-  #       condition: on-failure
-
 
   # messenger: # 💖 주석 처리된 서비스 사용 시 설정 필요
   #   build:
@@ -299,64 +256,7 @@ services:
 
 
 
-  postgres-auth:
-    image: postgres:15
-    environment:
-      # 🚨🚨🚨 DB 인증 정보를 환경 변수에서 가져오도록 수정! 🚨🚨🚨
-      - POSTGRES_USER=${AUTH_DB_USER} # .env 파일에서 가져옴
-      - POSTGRES_PASSWORD=${AUTH_DB_PASSWORD} # .env 파일에서 가져옴
-      - POSTGRES_DB=${AUTH_DB_NAME} # .env 파일에서 가져옴
-    volumes:
-      - postgres_auth_data:/var/lib/postgresql/data # Named Volume으로 데이터 영속성 유지
-      # 초기화 스크립트 (컨테이너 시작 시 실행될 .sql 또는 .sh 파일들이 포함된 디렉토리)
-      # 이 경로는 auth 서비스 DB에 특화된 초기화 스크립트를 포함해야 합니다.
-      - ./Database/init-db:/docker-entrypoint-initdb.d # 👈 경로를 더 명확하게 변경 (예시)
-    deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - node.labels.db_auth == true # 특정 노드에 배포 (예: 영구 스토리지 노드)
-      restart_policy:
-        condition: on-failure
-
-
-  # postgres-auth:
-  #   image: postgres:15
-  #   environment:
-  #     - POSTGRES_USER=auth_user # 💖 Auth 서비스 전용 사용자 이름으로 변경
-  #     - POSTGRES_PASSWORD=auth_password # 💖 Auth 서비스 전용 비밀번호로 변경
-  #     - POSTGRES_DB=textneckhub_auth_db # 🌟 Auth 서비스 전용 DB 이름 추가
-  #   # ports: # 🗑️ 이 섹션을 완전히 제거! 외부로 노출하지 않음
-  #     # 🗑️ - "5442:5432"
-  #   volumes:
-  #     - postgres_auth_data:/var/lib/postgresql/data # 💖 Named Volume으로 변경
-  #     - ./Database/init-db:/docker-entrypoint-initdb.d # 💖 init 스크립트 경로를 각 DB에 맞게 구체화
-  #   deploy: # 💖 이 줄은 volumes와 같은 레벨 (스페이스 4칸)
-  #     replicas: 1 # 💖 deploy보다 2칸 더 (스페이스 6칸)
-  #     placement: # 💖 deploy보다 2칸 더 (스페이스 6칸)
-  #       constraints: # 💖 placement보다 2칸 더 (스페이스 8칸)
-  #         - node.labels.db_auth == true # 💖 constraints보다 2칸 더 (스페이스 10칸)
-  #     restart_policy: # 💖 deploy보다 2칸 더 (스페이스 6칸)
-  #       condition: on-failure # 💖 restart_policy보다 2칸 더 (스페이스 8칸)
-        
-  # postgres-board:
-  #   image: postgres:15
-  #   environment:
-  #     - POSTGRES_USER=board_user # 💖 Board 서비스 전용 사용자 이름으로 변경
-  #     - POSTGRES_PASSWORD=board_password # 💖 Board 서비스 전용 비밀번호로 변경
-  #     - POSTGRES_DB=textneckhub_board_db # 🌟 Board 서비스 전용 DB 이름 추가
-  #   # ports: # 🗑️ 이 섹션을 완전히 제거! 외부로 노출하지 않음
-  #     # 🗑️ - "5442:5432"
-  #   volumes:
-  #     - postgres_board_data:/var/lib/postgresql/data # 💖 Named Volume으로 변경
-  #     - ./Database/init-db:/docker-entrypoint-initdb.d # 💖 init 스크립트 경로를 각 DB에 맞게 구체화
-  #   deploy: # 💖 이 줄은 volumes와 같은 레벨 (스페이스 6칸)
-  #     replicas: 1 # 💖 deploy보다 2칸 더 (스페이스 8칸)
-  #     placement: # 💖 deploy보다 2칸 더 (스페이스 8칸)
-  #       constraints: # 💖 placement보다 2칸 더 (스페이스 10칸)
-  #         - node.labels.db_board == true # 💖 constraints보다 2칸 더 (스페이스 12칸)
-  #     restart_policy: # 💖 deploy보다 2칸 더 (스페이스 8칸)
-  #       condition: on-failure # 💖 restart_policy보다 2칸 더 (스페이스 10칸)
+  
 
   # mongodb: # 💖 주석 처리된 서비스 사용 시 설정 필요
   #   image: mongo:7
@@ -370,14 +270,7 @@ services:
   #   🌟     condition: on-failure
 
 
-  redis:
-    image: redis:7
-    volumes:
-      - redis_data:/data
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
+
 
 
   # prometheus: # 💖 주석 처리된 서비스 사용 시 설정 필요
@@ -436,14 +329,14 @@ services:
 
 
 # --- Named Volumes 정의 (데이터 영속성 보장) ---
-volumes: # 🌟 volumes 섹션 추가
-  postgres_auth_data: # 🌟 postgres_auth_data 볼륨 정의
-  # postgres_board_data: # 🌟 postgres_board_data 볼륨 정의
-  static_data: # 정적 파일용 공유 볼륨 정의
-  media_data:  # 미디어 파일용 공유 볼륨 정의
-  # 🌟 주석 처리된 서비스들을 사용한다면 아래 볼륨들도 주석 해제하여 정의
-  # 🌟 mongodb_data:
-  redis_data:
+# volumes: # 🌟 volumes 섹션 추가
+#   postgres_auth_data: # 🌟 postgres_auth_data 볼륨 정의
+#   # postgres_board_data: # 🌟 postgres_board_data 볼륨 정의
+#   static_data: # 정적 파일용 공유 볼륨 정의
+#   media_data:  # 미디어 파일용 공유 볼륨 정의
+#   # 🌟 주석 처리된 서비스들을 사용한다면 아래 볼륨들도 주석 해제하여 정의
+#   # 🌟 mongodb_data:
+#   redis_data:
   # 🌟 prometheus_data:
   # 🌟 grafana_data:
 

@@ -1,4 +1,5 @@
 FROM python:3.13-alpine
 WORKDIR /app
 COPY app/ /app/
+RUN .venv/bin/uv run python manage.py collectstatic --noinput
 CMD [".venv/bin/uv","run","uwsgi", "--ini", "uwsgi.ini"]

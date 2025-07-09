@@ -1,7 +1,5 @@
-# Board 서비스 Production Dockerfile
 FROM python:3.13-alpine
 WORKDIR /app
 COPY app/ /app/
-
-
-CMD [".venv/bin/uv","run","uwsgi", "--ini", "uwsgi.ini"]
+RUN .venv/bin/uv run python manage.py collectstatic --noinput
+CMD [".venv/bin/uv","run","daphne", "-b", "0.0.0.0:8000", "config.asgi:application"]
