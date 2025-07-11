@@ -13,8 +13,6 @@ services:
       - ./Nginx/app/nginx/nginx.conf:/etc/nginx/nginx.conf:z
       - ./Nginx/app/nginx/conf.d/:/etc/nginx/conf.d/:z
       - ./Frontend/app/dist:/usr/share/nginx/html:ro
-      
-      
       - static_data:/var/www/static/:ro 
       - media_data:/var/www/media/:ro 
     restart: always
@@ -25,6 +23,10 @@ services:
           - node.role == manager
       restart_policy:
         condition: on-failure
+    depends_on: # Nginx가 시작되기 전에 Auth와 Board 서비스가 준비되어야 해
+      - auth
+      - board
+
 
   auth:
     build:
@@ -33,13 +35,15 @@ services:
     image: textneckhub-auth:v1.0.0
     depends_on:
       - postgres-auth
+      # 🚨🚨🚨 이전 대화에서 redis와 rabbitmq 의존성이 있었는데, 현재 입력에서는 빠져있어.
+      # 만약 auth 서비스가 redis나 rabbitmq를 사용한다면 여기에 다시 추가해야 해!
+      # 예: - redis
+      # 예: - rabbitmq
     environment:
-      # 🚨🚨🚨 모든 값들을 환경 변수에서 불러오도록 수정! 🚨🚨🚨
       - DATABASE_URL=${AUTH_DATABASE_URL}
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-      
-      - SECRET_KEY=${SECRET_KEY} # SECRET_KEY는 DJANGO_SECRET_KEY로 통일
+      - SECRET_KEY=${SECRET_KEY}
       - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
       - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
       - JWT_ROTATE_REFRESH_TOKENS=${JWT_ROTATE_REFRESH_TOKENS}
@@ -51,7 +55,6 @@ services:
       - JWT_ISSUER=${JWT_ISSUER}
       - JWT_SLIDING_TOKEN_LIFETIME_MINUTES=${JWT_SLIDING_TOKEN_LIFETIME_MINUTES}
       - JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS=${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS}
-
       - REDIS_HOST=${REDIS_HOST}
     volumes:
       - ./Auth/app:/app 
@@ -65,6 +68,7 @@ services:
       restart_policy:
         condition: on-failure
 
+
   board:
     build:
       context: ./Board
@@ -72,12 +76,14 @@ services:
     image: textneckhub-board:v1.0.0
     depends_on:
       - postgres-board
+      # 🚨🚨🚨 이전 대화에서 redis와 rabbitmq 의존성이 있었는데, 현재 입력에서는 빠져있어.
+      # 만약 board 서비스가 redis나 rabbitmq를 사용한다면 여기에 다시 추가해야 해!
+      # 예: - redis
+      # 예: - rabbitmq
     environment:
-
       - DATABASE_URL=${BOARD_DATABASE_URL}
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-      
       - SECRET_KEY=${SECRET_KEY} 
       - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
       - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
@@ -90,7 +96,6 @@ services:
       - JWT_ISSUER=${JWT_ISSUER}
       - JWT_SLIDING_TOKEN_LIFETIME_MINUTES=${JWT_SLIDING_TOKEN_LIFETIME_MINUTES}
       - JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS=${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS}
-
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - REDIS_HOST=${REDIS_HOST}
     volumes:
@@ -104,6 +109,7 @@ services:
         delay: 10s
       restart_policy:
         condition: on-failure
+ 
 
   postgres-auth:
     image: postgres:15
@@ -116,11 +122,9 @@ services:
       - ./Database/auth-init-db:/docker-entrypoint-initdb.d
     deploy:
       replicas: 1
-      placement:
-        constraints:
-          - node.labels.db_auth == true
       restart_policy:
         condition: on-failure
+
 
   postgres-board:
     image: postgres:15
@@ -133,11 +137,9 @@ services:
       - ./Database/board-init-db:/docker-entrypoint-initdb.d
     deploy:
       replicas: 1
-      placement:
-        constraints:
-          - node.labels.db_board == true
       restart_policy:
         condition: on-failure
+
 
   redis:
     image: redis:7
@@ -147,6 +149,7 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -160,12 +163,190 @@ services:
         delay: 10s
       restart_policy:
         condition: on-failure
+
+
 volumes:
   postgres_auth_data:
   postgres_board_data:
   static_data: 
   media_data:
   redis_data:
+
+
+    # 이 네트워크가 외부에서 미리 생성된 네트워크라면 external: true를 추가해야 해!
+    # external: true
+    # name: my_custom_network_name # external: true일 경우 미리 만든 네트워크의 실제 이름
+    # 이 네트워크가 외부에서 미리 생성된 네트워크라면 external: true를 추가해야 해!
+    # external: true
+    # name: my_custom_network_name # external: true일 경우 미리 만든 네트워크의 실제 이름
+
+# version: '3.8'
+
+# services:
+#   nginx:
+#     image: nginx:latest
+#     ports:
+#       - "80:80"
+#       - "443:443"
+#     volumes:
+#       - ./Nginx/app/certbot-www:/var/www/certbot:z
+#       - ./Nginx/app/certbot-etc:/etc/letsencrypt:z
+#       - ./Nginx/app/nginx/nginx.conf:/etc/nginx/nginx.conf:z
+#       - ./Nginx/app/nginx/conf.d/:/etc/nginx/conf.d/:z
+#       - ./Frontend/app/dist:/usr/share/nginx/html:ro
+      
+      
+#       - static_data:/var/www/static/:ro 
+#       - media_data:/var/www/media/:ro 
+#     restart: always
+#     deploy:
+#       replicas: 1
+#       placement:
+#         constraints:
+#           - node.role == manager
+#       restart_policy:
+#         condition: on-failure
+
+#   auth:
+#     build:
+#       context: ./Auth
+#       dockerfile: Dockerfile.prod
+#     image: textneckhub-auth:v1.0.0
+#     depends_on:
+#       - postgres-auth
+#     environment:
+#       # 🚨🚨🚨 모든 값들을 환경 변수에서 불러오도록 수정! 🚨🚨🚨
+#       - DATABASE_URL=${AUTH_DATABASE_URL}
+#       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+#       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      
+#       - SECRET_KEY=${SECRET_KEY} # SECRET_KEY는 DJANGO_SECRET_KEY로 통일
+#       - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
+#       - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
+#       - JWT_ROTATE_REFRESH_TOKENS=${JWT_ROTATE_REFRESH_TOKENS}
+#       - JWT_BLACKLIST_AFTER_ROTATION=${JWT_BLACKLIST_AFTER_ROTATION}
+#       - JWT_ALGORITHM=${JWT_ALGORITHM}
+#       - JWT_USER_ID_CLAIM=${JWT_USER_ID_CLAIM}
+#       - JWT_JTI_CLAIM=${JWT_JTI_CLAIM}
+#       - JWT_AUDIENCE=${JWT_AUDIENCE}
+#       - JWT_ISSUER=${JWT_ISSUER}
+#       - JWT_SLIDING_TOKEN_LIFETIME_MINUTES=${JWT_SLIDING_TOKEN_LIFETIME_MINUTES}
+#       - JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS=${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS}
+
+#       - REDIS_HOST=${REDIS_HOST}
+#     volumes:
+#       - ./Auth/app:/app 
+#       - static_data:/app/collected_static_auth/:rw
+#       - media_data:/app/uploaded_media_auth/:rw
+#     deploy:
+#       replicas: 1
+#       update_config:
+#         parallelism: 1
+#         delay: 10s
+#       restart_policy:
+#         condition: on-failure
+
+#   board:
+#     build:
+#       context: ./Board
+#       dockerfile: Dockerfile.prod
+#     image: textneckhub-board:v1.0.0
+#     depends_on:
+#       - postgres-board
+#     environment:
+
+#       - DATABASE_URL=${BOARD_DATABASE_URL}
+#       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+#       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      
+#       - SECRET_KEY=${SECRET_KEY} 
+#       - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
+#       - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
+#       - JWT_ROTATE_REFRESH_TOKENS=${JWT_ROTATE_REFRESH_TOKENS}
+#       - JWT_BLACKLIST_AFTER_ROTATION=${JWT_BLACKLIST_AFTER_ROTATION}
+#       - JWT_ALGORITHM=${JWT_ALGORITHM}
+#       - JWT_USER_ID_CLAIM=${JWT_USER_ID_CLAIM}
+#       - JWT_JTI_CLAIM=${JWT_JTI_CLAIM}
+#       - JWT_AUDIENCE=${JWT_AUDIENCE}
+#       - JWT_ISSUER=${JWT_ISSUER}
+#       - JWT_SLIDING_TOKEN_LIFETIME_MINUTES=${JWT_SLIDING_TOKEN_LIFETIME_MINUTES}
+#       - JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS=${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS}
+
+#       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+#       - REDIS_HOST=${REDIS_HOST}
+#     volumes:
+#       - ./Board/app:/app 
+#       - static_data:/app/collected_static_board/:rw
+#       - media_data:/app/uploaded_media_board/:rw 
+#     deploy:
+#       replicas: 1
+#       update_config:
+#         parallelism: 1
+#         delay: 10s
+#       restart_policy:
+#         condition: on-failure
+
+#   postgres-auth:
+#     image: postgres:15
+#     environment:
+#       - POSTGRES_USER=${AUTH_DB_USER}
+#       - POSTGRES_PASSWORD=${AUTH_DB_PASSWORD}
+#       - POSTGRES_DB=${AUTH_DB_NAME}
+#     volumes:
+#       - postgres_auth_data:/var/lib/postgresql/data
+#       - ./Database/auth-init-db:/docker-entrypoint-initdb.d
+#     deploy:
+#       replicas: 1
+#       placement:
+#         constraints:
+#           - node.labels.db_auth == true
+#       restart_policy:
+#         condition: on-failure
+
+#   postgres-board:
+#     image: postgres:15
+#     environment:
+#       - POSTGRES_USER=${BOARD_DB_USER}
+#       - POSTGRES_PASSWORD=${BOARD_DB_PASSWORD}
+#       - POSTGRES_DB=${BOARD_DB_NAME}
+#     volumes:
+#       - postgres_board_data:/var/lib/postgresql/data
+#       - ./Database/board-init-db:/docker-entrypoint-initdb.d
+#     deploy:
+#       replicas: 1
+#       placement:
+#         constraints:
+#           - node.labels.db_board == true
+#       restart_policy:
+#         condition: on-failure
+
+#   redis:
+#     image: redis:7
+#     volumes:
+#       - redis_data:/data
+#     deploy:
+#       replicas: 1
+#       restart_policy:
+#         condition: on-failure
+
+#   rabbitmq:
+#     image: rabbitmq:3-management-alpine
+#     ports:
+#       - "5672:5672"
+#       - "15672:15672"
+#     deploy:
+#       replicas: 1
+#       update_config:
+#         parallelism: 1
+#         delay: 10s
+#       restart_policy:
+#         condition: on-failure
+# volumes:
+#   postgres_auth_data:
+#   postgres_board_data:
+#   static_data: 
+#   media_data:
+#   redis_data:
 
 
 
