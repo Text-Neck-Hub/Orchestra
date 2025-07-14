@@ -3,8 +3,14 @@
 stop:
 	docker stack rm textneckhub
 
+
+
 deploy:
 	./deploy.sh
+
+
+restart: stop deploy
+	@echo "TextNeckHub services restarted successfully! 🚀"
 
 build_auth:
 	docker build \
