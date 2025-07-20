@@ -1,295 +1,14 @@
-# # version: '3.8'
 
-# # services:
- 
-# #   nginx:
-    
-
-# #     image: nginx:latest
-# #     ports:
-# #       - "80:80"
-# #       - "443:443"
-# #     volumes:
-# #       - ./Nginx/app/certbot-www:/var/www/certbot:z
-# #       - ./Nginx/app/certbot-etc:/etc/letsencrypt:z
-# #       - ./Nginx/app/nginx/nginx.conf:/etc/nginx/nginx.conf:z
-# #       - ./Nginx/app/nginx/conf.d/:/etc/nginx/conf.d/:z
-# #       - ./Frontend/app/dist:/usr/share/nginx/html:ro
-# #       - static_data:/var/www/static/:ro
-# #       - media_data:/var/www/media/:ro
-# #     # restart: always # 로컬 개발용에서는 필요에 따라 주석 처리 가능
-# #     depends_on: # Nginx가 시작되기 전에 Auth와 Board 서비스가 준비되어야 해
-# #       - auth
-# #       - board
-
-# #   auth:
-# #     build:
-# #       context: ./Auth
-# #       dockerfile: Dockerfile.prod
-# #     image: textneckhub-auth:v1.0.0
-# #     depends_on:
-# #       - postgres-auth
-# #       - redis # Auth 서비스가 Redis도 사용하는 경우 추가
-# #       - rabbitmq # Auth 서비스가 RabbitMQ도 사용하는 경우 추가
-# #     environment:
-# #       # 이 환경 변수들은 컨테이너 실행 시점에 .env 파일에서 불러와져 적용돼.
-# #       # .env 파일이 docker-compose.yml과 같은 디렉토리에 있으면 자동으로 로드됨!
-# #       - DATABASE_URL=${AUTH_DATABASE_URL}
-# #       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-# #       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-# #       - SECRET_KEY=${SECRET_KEY}
-# #       - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
-# #       - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
-# #       - JWT_ROTATE_REFRESH_TOKENS=${JWT_ROTATE_REFRESH_TOKENS}
-# #       - JWT_BLACKLIST_AFTER_ROTATION=${JWT_BLACKLIST_AFTER_ROTATION}
-# #       - JWT_ALGORITHM=${JWT_ALGORITHM}
-# #       - JWT_USER_ID_CLAIM=${JWT_USER_ID_CLAIM}
-# #       - JWT_JTI_CLAIM=${JWT_JTI_CLAIM}
-# #       - JWT_AUDIENCE=${JWT_AUDIENCE}
-# #       - JWT_ISSUER=${JWT_ISSUER}
-# #       - JWT_SLIDING_TOKEN_LIFETIME_MINUTES=${JWT_SLIDING_TOKEN_LIFETIME_MINUTES}
-# #       - JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS=${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS}
-# #       - REDIS_HOST=${REDIS_HOST}
-# #     volumes:
-# #       - ./Auth/app:/app # 로컬 코드 변경 사항을 바로 반영하기 위한 마운트
-# #       - static_data:/app/collected_static_auth/:rw
-# #       - media_data:/app/uploaded_media_auth/:rw
-# #     # ports: # 로컬에서 이 서비스에 직접 접근해야 한다면 포트 매핑 추가 (예: - "8001:8000")
-
-# #   board:
-# #     build:
-# #       context: ./Board
-# #       dockerfile: Dockerfile.prod
-# #     image: textneckhub-board:v1.0.0
-# #     depends_on:
-# #       - postgres-board
-# #       - redis # Board 서비스가 Redis도 사용하는 경우 추가
-# #       - rabbitmq # Board 서비스가 RabbitMQ도 사용하는 경우 추가
-# #     environment:
-# #       - DATABASE_URL=${BOARD_DATABASE_URL}
-# #       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-# #       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-# #       - SECRET_KEY=${SECRET_KEY}
-# #       - JWT_ACCESS_TOKEN_LIFETIME_MINUTES=${JWT_ACCESS_TOKEN_LIFETIME_MINUTES}
-# #       - JWT_REFRESH_TOKEN_LIFETIME_DAYS=${JWT_REFRESH_TOKEN_LIFETIME_DAYS}
-# #       - JWT_ROTATE_REFRESH_TOKENS=${JWT_ROTATE_REFRESH_TOKENS}
-# #       - JWT_BLACKLIST_AFTER_ROTATION=${JWT_BLACKLIST_AFTER_ROTATION}
-# #       - JWT_ALGORITHM=${JWT_ALGORITHM}
-# #       - JWT_USER_ID_CLAIM=${JWT_USER_ID_CLAIM}
-# #       - JWT_JTI_CLAIM=${JWT_JTI_CLAIM}
-# #       - JWT_AUDIENCE=${JWT_AUDIENCE}
-# #       - JWT_ISSUER=${JWT_ISSUER}
-# #       - JWT_SLIDING_TOKEN_LIFETIME_MINUTES=${JWT_SLIDING_TOKEN_LIFETIME_MINUTES}
-# #       - JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS=${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS}
-# #       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
-# #       - REDIS_HOST=${REDIS_HOST}
-# #     volumes:
-# #       - ./Board/app:/app # 로컬 코드 변경 사항을 바로 반영하기 위한 마운트
-# #       - static_data:/app/collected_static_board/:rw
-# #       - media_data:/app/uploaded_media_board/:rw
-# #     # ports: # 로컬에서 이 서비스에 직접 접근해야 한다면 포트 매핑 추가 (예: - "8002:8000")
-
-# #   postgres-auth:
-# #     image: postgres:15
-# #     environment:
-# #       - POSTGRES_USER=${AUTH_DB_USER}
-# #       - POSTGRES_PASSWORD=${AUTH_DB_PASSWORD}
-# #       - POSTGRES_DB=${AUTH_DB_NAME}
-# #     volumes:
-# #       - postgres_auth_data:/var/lib/postgresql/data
-# #       - ./Database/auth-init-db:/docker-entrypoint-initdb.d # 초기 DB 스크립트 마운트
-
-# #   postgres-board:
-# #     image: postgres:15
-# #     environment:
-# #       - POSTGRES_USER=${BOARD_DB_USER}
-# #       - POSTGRES_PASSWORD=${BOARD_DB_PASSWORD}
-# #       - POSTGRES_DB=${BOARD_DB_NAME}
-# #     volumes:
-# #       - postgres_board_data:/var/lib/postgresql/data
-# #       - ./Database/board-init-db:/docker-entrypoint-initdb.d # 초기 DB 스크립트 마운트
-
-# #   redis:
-# #     image: redis:7
-# #     volumes:
-# #       - redis_data:/data # Redis 데이터 영구 저장을 위한 볼륨
-
-# #   rabbitmq:
-# #     image: rabbitmq:3-management-alpine
-# #     ports:
-# #       - "5672:5672" # AMQP 포트
-# #       - "15672:15672" # 관리 UI 포트
-
-# # volumes:
-# #   postgres_auth_data:
-# #   postgres_board_data:
-# #   static_data:
-# #   media_data:
-# #   redis_data:
-
-# # # 기본 네트워크는 Docker Compose가 자동으로 생성하지만,
-# # # 명시적으로 정의하여 관리하는 것이 좋음.
-# # # 모든 서비스는 이 네트워크에 자동으로 연결됨.
-# # networks:
-# #   default: # Docker Compose 기본 네트워크 (이름을 지정하지 않으면 프로젝트 이름_default로 생성됨)
-# version: '3.8'
-
-# services:
- 
-#   nginx:
-#     image: nginx:latest
-#     ports:
-#       - "80:80"
-#       - "443:443"
-#     volumes:
-#       - ./Nginx/app/certbot-www:/var/www/certbot:z
-#       - ./Nginx/app/certbot-etc:/etc/letsencrypt:z
-#       - ./Nginx/app/nginx/nginx.conf:/etc/nginx/nginx.conf:z
-#       - ./Nginx/app/nginx/conf.d/:/etc/nginx/conf.d/:z
-#       - ./Frontend/app/dist:/usr/share/nginx/html:ro
-#       - static_data:/var/www/static/:ro
-#       - media_data:/var/www/media/:ro
-#     # restart: always # 로컬 개발용에서는 필요에 따라 주석 처리 가능
-#     depends_on: # Nginx가 시작되기 전에 Auth와 Board 서비스가 준비되어야 해
-#       - auth
-#       - board
-
-#   auth:
-#     build:
-#       context: ./Auth
-#       dockerfile: Dockerfile.prod
-#       # >>> 여기! environment에 있던 변수들을 args로 옮겼어!
-#       args:
-#         DATABASE_URL: ${AUTH_DATABASE_URL:-postgresql://auth_user:auth_password@postgres-auth:5432/textneckhub_auth_db}
-#         DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.production}
-#         ALLOWED_HOSTS: ${ALLOWED_HOSTS:-www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost}
-#         SECRET_KEY: ${SECRET_KEY:-your_very_long_and_random_secret_key_for_jwt_and_django}
-#         JWT_ACCESS_TOKEN_LIFETIME_MINUTES: ${JWT_ACCESS_TOKEN_LIFETIME_MINUTES:-5}
-#         JWT_REFRESH_TOKEN_LIFETIME_DAYS: ${JWT_REFRESH_TOKEN_LIFETIME_DAYS:-1}
-#         JWT_ROTATE_REFRESH_TOKENS: ${JWT_ROTATE_REFRESH_TOKENS:-True}
-#         JWT_BLACKLIST_AFTER_ROTATION: ${JWT_BLACKLIST_AFTER_ROTATION:-True}
-#         JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
-#         JWT_USER_ID_CLAIM: ${JWT_USER_ID_CLAIM:-user_id}
-#         JWT_JTI_CLAIM: ${JWT_JTI_CLAIM:-jti}
-#         JWT_AUDIENCE: ${JWT_AUDIENCE:-}
-#         JWT_ISSUER: ${JWT_ISSUER:-}
-#         JWT_SLIDING_TOKEN_LIFETIME_MINUTES: ${JWT_SLIDING_TOKEN_LIFETIME_MINUTES:-5}
-#         JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS: ${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS:-1}
-#         REDIS_HOST: ${REDIS_HOST:-redis}
-#     image: textneckhub-auth:v1.0.0
-#     depends_on:
-#       - postgres-auth
-#       - redis # Auth 서비스가 Redis도 사용하는 경우 추가
-#       - rabbitmq # Auth 서비스가 RabbitMQ도 사용하는 경우 추가
-#     environment:
-#       # environment 섹션은 비워둘게!
-#       # 이전에 있던 모든 변수들이 args로 옮겨졌어.
-#       # 하지만 애플리케이션 실행 시 이 변수들이 필요하다는 점을 기억해줘!
-#       # 이 섹션이 비어있으면 앱이 작동하지 않을 수 있어.
-#       # 예를 들어, DJANGO_SETTINGS_MODULE이 실행 시에 없으면 Django 앱이 시작되지 않을 거야.
-#       # DATABASE_URL도 마찬가지야.
-#     volumes:
-#       - ./Auth/app:/app # 로컬 코드 변경 사항을 바로 반영하기 위한 마운트
-#       - static_data:/app/collected_static_auth/:rw
-#       - media_data:/app/uploaded_media_auth/:rw
-#     # ports: # 로컬에서 이 서비스에 직접 접근해야 한다면 포트 매핑 추가 (예: - "8001:8000")
-
-#   board:
-#     build:
-#       context: ./Board
-#       dockerfile: Dockerfile.prod
-#       # >>> 여기! environment에 있던 변수들을 args로 옮겼어!
-#       args:
-#         DATABASE_URL: ${BOARD_DATABASE_URL:-postgresql://board_user:board_password@postgres-board:5432/textneckhub_board_db}
-#         DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.production}
-#         ALLOWED_HOSTS: ${ALLOWED_HOSTS:-www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost}
-#         SECRET_KEY: ${SECRET_KEY:-your_very_long_and_random_secret_key_for_jwt_and_django}
-#         JWT_ACCESS_TOKEN_LIFETIME_MINUTES: ${JWT_ACCESS_TOKEN_LIFETIME_MINUTES:-5}
-#         JWT_REFRESH_TOKEN_LIFETIME_DAYS: ${JWT_REFRESH_TOKEN_LIFETIME_DAYS:-1}
-#         JWT_ROTATE_REFRESH_TOKENS: ${JWT_ROTATE_REFRESH_TOKENS:-True}
-#         JWT_BLACKLIST_AFTER_ROTATION: ${JWT_BLACKLIST_AFTER_ROTATION:-True}
-#         JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
-#         JWT_USER_ID_CLAIM: ${JWT_USER_ID_CLAIM:-user_id}
-#         JWT_JTI_CLAIM: ${JWT_JTI_CLAIM:-jti}
-#         JWT_AUDIENCE: ${JWT_AUDIENCE:-}
-#         JWT_ISSUER: ${JWT_ISSUER:-}
-#         JWT_SLIDING_TOKEN_LIFETIME_MINUTES: ${JWT_SLIDING_TOKEN_LIFETIME_MINUTES:-5}
-#         JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS: ${JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS:-1}
-#         CELERY_BROKER_URL: ${CELERY_BROKER_URL:-amqp://guest:guest@rabbitmq:5672//}
-#         REDIS_HOST: ${REDIS_HOST:-redis}
-#     image: textneckhub-board:v1.0.0
-#     depends_on:
-#       - postgres-board
-#       - redis # Board 서비스가 Redis도 사용하는 경우 추가
-#       - rabbitmq # Board 서비스가 RabbitMQ도 사용하는 경우 추가
-#     environment:
-#       # environment 섹션은 비워둘게!
-#       # 이전에 있던 모든 변수들이 args로 옮겨졌어.
-#       # 하지만 애플리케이션 실행 시 이 변수들이 필요하다는 점을 기억해줘!
-#       # 이 섹션이 비어있으면 앱이 작동하지 않을 수 있어.
-#     volumes:
-#       - ./Board/app:/app # 로컬 코드 변경 사항을 바로 반영하기 위한 마운트
-#       - static_data:/app/collected_static_board/:rw
-#       - media_data:/app/uploaded_media_board/:rw
-#     # ports: # 로컬에서 이 서비스에 직접 접근해야 한다면 포트 매핑 추가 (예: - "8002:8000")
-
-#   postgres-auth:
-#     image: postgres:15
-#     environment:
-#       # 이 서비스는 build 섹션이 없어서 args로 옮길 수 없어.
-#       # 그래서 environment 섹션에 그대로 남겨둘게.
-#       - POSTGRES_USER=${AUTH_DB_USER:-auth_user}
-#       - POSTGRES_PASSWORD=${AUTH_DB_PASSWORD:-auth_password}
-#       - POSTGRES_DB=${AUTH_DB_NAME:-textneckhub_auth_db}
-#     volumes:
-#       - postgres_auth_data:/var/lib/postgresql/data
-#       - ./Database/auth-init-db:/docker-entrypoint-initdb.d # 초기 DB 스크립트 마운트
-
-#   postgres-board:
-#     image: postgres:15
-#     environment:
-#       # 이 서비스는 build 섹션이 없어서 args로 옮길 수 없어.
-#       # 그래서 environment 섹션에 그대로 남겨둘게.
-#       - POSTGRES_USER=${BOARD_DB_USER:-board_user}
-#       - POSTGRES_PASSWORD=${BOARD_DB_PASSWORD:-board_password}
-#       - POSTGRES_DB=${BOARD_DB_NAME:-textneckhub_board_db}
-#     volumes:
-#       - postgres_board_data:/var/lib/postgresql/data
-#       - ./Database/board-init-db:/docker-entrypoint-initdb.d # 초기 DB 스크립트 마운트
-
-#   redis:
-#     image: redis:7
-#     volumes:
-#       - redis_data:/data # Redis 데이터 영구 저장을 위한 볼륨
-
-#   rabbitmq:
-#     image: rabbitmq:3-management-alpine
-#     ports:
-#       - "5672:5672" # AMQP 포트
-#       - "15672:15672" # 관리 UI 포트
-
-# volumes:
-#   postgres_auth_data:
-#   postgres_board_data:
-#   static_data:
-#   media_data:
-#   redis_data:
-
-# # 기본 네트워크는 Docker Compose가 자동으로 생성하지만,
-# # 명시적으로 정의하여 관리하는 것이 좋음.
-# # 모든 서비스는 이 네트워크에 자동으로 연결됨.
-# networks:
-#   default: # Docker Compose 기본 네트워크 (이름을 지정하지 않으면 프로젝트 이름_default로 생성됨)
 version: '3.8'
 
 services:
  
   nginx:
-    # >>> 여기! image 이름을 커스텀 태그로 바꾸고 build 섹션 추가!
-    image: textneckhub-nginx:v1.0.0 # 최지웅1822만의 커스텀 태그!
+
+    image: textneckhub-nginx:v1.0.0
     build:
-      context: ./Nginx # 새로 만든 Dockerfile 폴더 경로
-      dockerfile: Dockerfile      # 폴더 안의 Dockerfile 이름
+      context: ./Nginx 
+      dockerfile: Dockerfile
     ports:
       - "80:80"
       - "443:443"
@@ -301,8 +20,8 @@ services:
       - ./Frontend/app/dist:/usr/share/nginx/html:ro
       - static_data:/var/www/static/:ro
       - media_data:/var/www/media/:ro
-    # restart: always # 로컬 개발용에서는 필요에 따라 주석 처리 가능
-    depends_on: # Nginx가 시작되기 전에 Auth와 Board 서비스가 준비되어야 해
+
+    depends_on:
       - auth
       - board
 
@@ -331,14 +50,14 @@ services:
     image: textneckhub-auth:v1.0.0
     depends_on:
       - postgres-auth
-      - redis # Auth 서비스가 Redis도 사용하는 경우 추가
-      - rabbitmq # Auth 서비스가 RabbitMQ도 사용하는 경우 추가
-    environment: {} # >>> 여기를 이렇게 수정했어! 명시적으로 빈 맵!
+      - redis
+      - rabbitmq 
+    environment: {} 
     volumes:
-      - ./Auth/app:/app # 로컬 코드 변경 사항을 바로 반영하기 위한 마운트
+      - ./Auth/app:/app
       - static_data:/app/collected_static_auth/:rw
       - media_data:/app/uploaded_media_auth/:rw
-    # ports: # 로컬에서 이 서비스에 직접 접근해야 한다면 포트 매핑 추가 (예: - "8001:8000")
+
 
   board:
     build:
@@ -366,61 +85,57 @@ services:
     image: textneckhub-board:v1.0.0
     depends_on:
       - postgres-board
-      - redis # Board 서비스가 Redis도 사용하는 경우 추가
-      - rabbitmq # Board 서비스가 RabbitMQ도 사용하는 경우 추가
-    environment: {} # >>> 여기를 이렇게 수정했어! 명시적으로 빈 맵!
+      - redis
+      - rabbitmq
     volumes:
-      - ./Board/app:/app # 로컬 코드 변경 사항을 바로 반영하기 위한 마운트
+      - ./Board/app:/app 
       - static_data:/app/collected_static_board/:rw
       - media_data:/app/uploaded_media_board/:rw
-    # ports: # 로컬에서 이 서비스에 직접 접근해야 한다면 포트 매핑 추가 (예: - "8002:8000")
+
 
   postgres-auth:
-    # >>> 여기! image 이름을 커스텀 태그로 바꾸고 build 섹션 추가!
-    image: textneckhub-postgres-auth:v1.0.0 # 최지웅1822만의 커스텀 태그!
+
+    image: textneckhub-postgres-auth:v1.0.0
     build:
-      context: ./Database # 새로 만든 Dockerfile 폴더 경로
-      dockerfile: Dockerfile                # 폴더 안의 Dockerfile 이름
+      context: ./Database 
+      dockerfile: Dockerfile 
     environment:
       - POSTGRES_USER=${AUTH_DB_USER:-auth_user}
       - POSTGRES_PASSWORD=${AUTH_DB_PASSWORD:-auth_password}
       - POSTGRES_DB=${AUTH_DB_NAME:-textneckhub_auth_db}
     volumes:
       - postgres_auth_data:/var/lib/postgresql/data
-      - ./Database/auth-init-db:/docker-entrypoint-initdb.d # 초기 DB 스크립트 마운트
+      - ./Database/auth-init-db:/docker-entrypoint-initdb.d
 
   postgres-board:
-    # >>> 여기! image 이름을 커스텀 태그로 바꾸고 build 섹션 추가!
-    image: textneckhub-postgres-board:v1.0.0 # 최지웅1822만의 커스텀 태그!
+    image: textneckhub-postgres-board:v1.0.0
     build:
-      context: ./Database # 새로 만든 Dockerfile 폴더 경로
-      dockerfile: Dockerfile                 # 폴더 안의 Dockerfile 이름
+      context: ./Database 
+      dockerfile: Dockerfile 
     environment:
       - POSTGRES_USER=${BOARD_DB_USER:-board_user}
       - POSTGRES_PASSWORD=${BOARD_DB_PASSWORD:-board_password}
       - POSTGRES_DB=${BOARD_DB_NAME:-textneckhub_board_db}
     volumes:
       - postgres_board_data:/var/lib/postgresql/data
-      - ./Database/board-init-db:/docker-entrypoint-initdb.d # 초기 DB 스크립트 마운트
+      - ./Database/board-init-db:/docker-entrypoint-initdb.d
 
   redis:
-    # >>> 여기! image 이름을 커스텀 태그로 바꾸고 build 섹션 추가!
-    image: textneckhub-redis:v1.0.0 # 최지웅1822만의 커스텀 태그!
+    image: textneckhub-redis:v1.0.0 
     build:
-      context: ./Redis # 새로 만든 Dockerfile 폴더 경로
-      dockerfile: Dockerfile        # 폴더 안의 Dockerfile 이름
+      context: ./Redis 
+      dockerfile: Dockerfile 
     volumes:
-      - redis_data:/data # Redis 데이터 영구 저장을 위한 볼륨
+      - redis_data:/data
 
   rabbitmq:
-    # >>> 여기! image 이름을 커스텀 태그로 바꾸고 build 섹션 추가!
-    image: textneckhub-rabbitmq:v1.0.0 # 최지웅1822만의 커스텀 태그!
+    image: textneckhub-rabbitmq:v1.0.0
     build:
-      context: ./RabbitMQ # 새로 만든 Dockerfile 폴더 경로
-      dockerfile: Dockerfile           # 폴더 안의 Dockerfile 이름
+      context: ./RabbitMQ
+      dockerfile: Dockerfile
     ports:
-      - "5672:5672" # AMQP 포트
-      - "15672:15672" # 관리 UI 포트
+      - "5672:5672" 
+      - "15672:15672" 
 
 volumes:
   postgres_auth_data:
@@ -429,9 +144,7 @@ volumes:
   media_data:
   redis_data:
 
-# 기본 네트워크는 Docker Compose가 자동으로 생성하지만,
-# 명시적으로 정의하여 관리하는 것이 좋음.
-# 모든 서비스는 이 네트워크에 자동으로 연결됨.
+
 networks:
   default:
     external: true
