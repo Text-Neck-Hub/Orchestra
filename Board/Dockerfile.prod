@@ -2,6 +2,10 @@
 FROM python:3.13-alpine
 WORKDIR /app
 COPY app/ /app/
-
-
-CMD ["tail", "-f", "/dev/null"]
+CMD ["/bin/sh", "-c", ".venv/bin/daphne \
+    -b 0.0.0.0 \
+    --access-log /app/logs/access.log \
+    --ping-interval 20 \
+    config.asgi:application \
+    > /app/logs/daphne.stdout.log \
+    2> /app/logs/daphne.stderr.log"]
