@@ -170,6 +170,9 @@ services:
   
   mongodb-core:
     image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${CORE_DB_USER} 
+      MONGO_INITDB_ROOT_PASSWORD: ${CORE_DB_PASSWORD} 
     volumes:
       - mongodb_core_data:/data/db 
       
