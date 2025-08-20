@@ -17,7 +17,7 @@ services:
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
       - ALLOW_PLAINTEXT_LISTENER=yes
     ports:
-      - "9094:9094"   # 호스트에서 접속 시 localhost:9094 사용
+      - "9094:9094"   
     volumes:
       - kafka_data:/bitnami/kafka
     healthcheck:
@@ -45,7 +45,7 @@ services:
 
   fastapi:
     build:
-      context: ./app
+      context: .
       dockerfile: Dockerfile
     container_name: fastapi
     environment:
@@ -54,7 +54,7 @@ services:
       kafka:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "8010:8000"
     networks:
       - app-net
 
