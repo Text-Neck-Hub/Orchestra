@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     liblz4-1 \
     libsasl2-2 \
     libssl3 \
-    && rm -rf /var/lib/apt/lists/*
-
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get update && apt-get install -y build-essential python3-dev
 COPY app/ /app/
 
 CMD [".venv/bin/uv","run","uwsgi", "--ini", "uwsgi.ini"]
