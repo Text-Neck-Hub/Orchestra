@@ -1,6 +1,20 @@
-# Auth 서비스 Production Dockerfile
-FROM python:3.13-alpine
+
+FROM python:3.13-slim
+
+
 WORKDIR /app
+
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libexpat1 \
+    librdkafka1 \
+    libzstd1 \
+    liblz4-1 \
+    libsasl2-2 \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY app/ /app/
 
-CMD ["tail", "-f", "/dev/null"]
+CMD [".venv/bin/uv","run","uwsgi", "--ini", "uwsgi.ini"]
