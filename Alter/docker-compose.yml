@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  alerts:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SERVER_PORT=8000
+    working_dir: /app
+    volumes:
+      - ./app:/app
+      - gradle_cache:/root/.gradle
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+
+volumes:
+  gradle_cache:

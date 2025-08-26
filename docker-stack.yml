@@ -28,7 +28,23 @@ services:
       - auth
       - board
 
-
+  alter:
+    image: textneckhub-alter:v1.0.0
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=8000
+      - DATABASE_URL=${ALTER_DATABASE_URL}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+    volumes:
+      - ./Alter/app:/app
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      
   auth:
     build:
       context: ./Auth

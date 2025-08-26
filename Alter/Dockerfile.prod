@@ -1,0 +1,15 @@
+FROM gradle:8.14.3-jdk21-alpine AS builder
+WORKDIR /app
+COPY app/ .
+RUN --mount=type=cache,target=/home/gradle/.gradle gradle --no-daemon clean bootJar -x test
+
+FROM eclipse-temurin:21-jre-alpine AS runtime
+WORKDIR /app
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+COPY --from=builder /app/build/libs/*.jar app.jar
+ENV SPRING_PROFILES_ACTIVE=prod \
+    SERVER_PORT=8000 \
+    JAVA_OPTS="-XX:MaxRAMPercentage=75 -Dfile.encoding=UTF-8 -Djava.security.egd=file:/dev/./urandom"
+EXPOSE 8000
+ENTRYPOINT ["sh","-c","exec java $JAVA_OPTS -jar app.jar"]

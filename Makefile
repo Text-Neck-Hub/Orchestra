@@ -12,6 +12,12 @@ deploy:
 restart: stop deploy
 	@echo "TextNeckHub services restarted successfully! 🚀"
 
+build_alter:
+	docker build \
+	  -f Alter/Dockerfile.prod \
+	  -t textneckhub-alter:v1.0.0 \
+	  Alter/
+
 build_auth:
 	docker build \
 	  -f Auth/Dockerfile.prod \
