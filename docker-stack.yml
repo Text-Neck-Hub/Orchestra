@@ -35,7 +35,9 @@ services:
       - SERVER_PORT=8000
       - DATABASE_URL=${ALTER_DATABASE_URL}
       - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
-    
+      - LOG_DIR=${LOG_DIR}
+    volumes:
+      - ./Alter/app/logs:/app/logs
     deploy:
       replicas: 1
       update_config:
