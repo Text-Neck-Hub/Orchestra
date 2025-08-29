@@ -209,7 +209,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${ALTER_DB_PASSWORD} 
     volumes:
       - mongodb_alter_data:/data/db 
-      - ./Database/alter-init-db:/docker-entrypoint-initdb.d:ro
+      - /home/smalllab/Docker/TextNeckHub/Database/alter-init-db:/docker-entrypoint-initdb.d:ro
     deploy: 
       replicas: 1 
       restart_policy:

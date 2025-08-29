@@ -14,9 +14,9 @@ mongosh --host localhost \
   -u "$MONGO_INITDB_ROOT_USERNAME" \
   -p "$MONGO_INITDB_ROOT_PASSWORD" \
   --authenticationDatabase "admin" <<'EOF'
-const dbName = process.env.MONGO_INITDB_DATABASE || "textneckhub_ai_db";
-const appUser = process.env.ALTER_APP_USER;
-const appPass = process.env.ALTER_APP_PASSWORD;
+const dbName = process.env.MONGO_INITDB_DATABASE || "textneckhub_alter_db";
+const appUser = process.env.ALTER_APP_USER || "alter_user";
+const appPass = process.env.ALTER_APP_PASSWORD || "alter";
 
 const db = db.getSiblingDB(dbName);
 const existing = db.getUser(appUser);

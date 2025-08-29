@@ -65,3 +65,6 @@ BOARD_DB_NAME=textneckhub_board_db # 👈 원래 사용하던 DB 이름
 # ALLOWED_HOSTS (콤마로 구분된 문자열)
 # 프로덕션에서는 실제 도메인과 API 도메인을 정확히 입력합니다.
 ALLOWED_HOSTS=www.textneckhub.p-e.kr,api.textneckhub.p-e.kr,localhost
+
+
+
